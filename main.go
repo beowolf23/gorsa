@@ -42,20 +42,25 @@ func (rsa *RSA) KeyGen(bits int) error {
 	return nil
 }
 
+func (rsa *RSA) GetKeyInfo() {
+	fmt.Println("Modulus: ", rsa.n)
+	fmt.Println("Prime 1: ", rsa.p)
+	fmt.Println("Prime 2: ", rsa.q)
+	fmt.Println("Public exponent: ", rsa.e)
+	fmt.Println("Private exponent: ", rsa.d)
+}
+
 func generatePrimeNumbers(bits int) (*big.Int, *big.Int) {
 	p, _ := rand.Prime(rand.Reader, bits)
 	q, _ := rand.Prime(rand.Reader, bits)
 	return p, q
 }
 
-func key_bits_count() {
-
-}
-
 func main() {
 
 	var bits int = 512
-	p, q := generatePrimeNumbers(bits)
 
-	fmt.Println("These are the prime numbers", p, q)
+	rsa := new(RSA)
+	rsa.KeyGen(bits)
+	rsa.GetKeyInfo()
 }
