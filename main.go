@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/rand"
+	"crypto/sha256"
 	"fmt"
 	"math/big"
 )
@@ -11,6 +12,8 @@ type CryptoAlgorithm interface {
 	Encrypt(plaintext *big.Int) *big.Int
 	Decrypt(ciphertext *big.Int) *big.Int
 	GetKeyInfo()
+	SignMessage(message []byte) []byte
+	VerifySignature(message []byte, signature []byte) bool
 }
 
 type RSA struct {
@@ -68,6 +71,47 @@ func (rsa *RSA) GetKeyInfo() {
 	fmt.Println("Private exponent: ", rsa.keyPair.d)
 }
 
+func (rsa *RSA) SignMessage(message []byte) []byte {
+
+	// compute the sha256 hash and convert to big int
+	h := ComputeSha256(message)
+	H := ByteArrayToBigInt(h)
+
+	// encrypt H with the private key to calculate the signature
+	s := new(big.Int).Exp(H, rsa.keyPair.d, rsa.keyPair.n)
+
+	return s.Bytes()
+}
+
+func (rsa *RSA) VerifySignature(message []byte, signature []byte) bool {
+
+	// compute the sha256 hash and convert to big int
+	h := ComputeSha256(message)
+	// H is the original hash of the message which needs
+	// to be compared with the hash resulted from decrypting
+	// the signature
+	hashedMessage := ByteArrayToBigInt(h)
+
+	// decrypt the signature with the public key to find the hash
+	hashFromSignature := new(big.Int).Exp(ByteArrayToBigInt(signature), rsa.keyPair.e, rsa.keyPair.n)
+
+	if hashedMessage.Cmp(hashFromSignature) != 0 {
+		return false
+	}
+	return true
+}
+
+func ComputeSha256(message []byte) []byte {
+	// compute the SHA256 of the message
+	sha := sha256.New()
+	sha.Write(message)
+	return sha.Sum(nil)
+}
+
+func ByteArrayToBigInt(message []byte) *big.Int {
+	return new(big.Int).SetBytes(message)
+}
+
 func GeneratePrimeNumbers(bits int) (*big.Int, *big.Int) {
 	p, _ := rand.Prime(rand.Reader, bits)
 	q, _ := rand.Prime(rand.Reader, bits)
@@ -85,11 +129,18 @@ func ConvertBigIntToString(num *big.Int) string {
 }
 
 func main() {
-
 	var bits int = 512
 	rsa := new(RSA)
 	rsa.KeyGen(bits)
-	ciphertext := rsa.Encrypt(ConvertStringToBigInt("something in here"))
-	plaintext := ConvertBigIntToString(rsa.Decrypt(ciphertext))
-	fmt.Println(plaintext)
+
+	// ciphertext := rsa.Encrypt(ConvertStringToBigInt("something in here"))
+	// plaintext := ConvertBigIntToString(rsa.Decrypt(ciphertext))
+	// fmt.Println(plaintext)
+	//
+
+	message := []byte("message")
+
+	signature := rsa.SignMessage(message)
+	fmt.Printf("The signature is: %x\n", signature)
+	fmt.Println("Is the signature good? ", rsa.VerifySignature(message, signature))
 }
