@@ -2,7 +2,7 @@
 build:
 	go build
 
-run:
+run: build
 	./gorsa
 
 clean:

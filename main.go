@@ -6,19 +6,23 @@ import (
 	"math/big"
 )
 
-type RSA struct {
-	n *big.Int // Modulus
-	p *big.Int // Prime 1
-	q *big.Int // Prime 2
-	e *big.Int // Public Exponent
-	d *big.Int // Private Exponent
-}
-
 type CryptoAlgorithm interface {
 	KeyGen(bits int)
 	Encrypt(plaintext *big.Int)
 	Decrypt(ciphertext *big.Int)
 	GetKeyInfo()
+}
+
+type RSA struct {
+	keyPair *KeyPair
+}
+
+type KeyPair struct {
+	n *big.Int // Modulus
+	p *big.Int // Prime 1
+	q *big.Int // Prime 2
+	e *big.Int // Public Exponent
+	d *big.Int // Private Exponent
 }
 
 func (rsa *RSA) KeyGen(bits int) error {
@@ -33,21 +37,25 @@ func (rsa *RSA) KeyGen(bits int) error {
 	e := big.NewInt(65537)
 	d := new(big.Int).ModInverse(e, phi)
 
-	rsa.p = p
-	rsa.q = q
-	rsa.n = n
-	rsa.e = e
-	rsa.d = d
+	var keyPair *KeyPair = new(KeyPair)
+
+	keyPair.q = q
+	keyPair.p = p
+	keyPair.n = n
+	keyPair.e = e
+	keyPair.d = d
+
+	rsa.keyPair = keyPair
 
 	return nil
 }
 
 func (rsa *RSA) GetKeyInfo() {
-	fmt.Println("Modulus: ", rsa.n)
-	fmt.Println("Prime 1: ", rsa.p)
-	fmt.Println("Prime 2: ", rsa.q)
-	fmt.Println("Public exponent: ", rsa.e)
-	fmt.Println("Private exponent: ", rsa.d)
+	fmt.Println("Modulus: ", rsa.keyPair.n)
+	fmt.Println("Prime 2: ", rsa.keyPair.q)
+	fmt.Println("Prime 1: ", rsa.keyPair.p)
+	fmt.Println("Public exponent: ", rsa.keyPair.e)
+	fmt.Println("Private exponent: ", rsa.keyPair.d)
 }
 
 func generatePrimeNumbers(bits int) (*big.Int, *big.Int) {
